@@ -40,13 +40,15 @@ From the Ambari & Ranger host. This needs adjusting if they are on different hos
 ```
 sudo yum install python-configparser jq pwgen
 
+read -p "Enter password:" -s ambari_pass
+
 ambari_user=admin
 ambari_protocol=https
 ambari_port=8443
-# ambari_host=$(python -c "import configparser; c = configparser.ConfigParser(); c.read('/etc/ambari-agent/conf/ambari-agent.ini'); print(c['server']['hostname'])")
+ambari_host=$(python -c "import configparser; c = configparser.ConfigParser(); c.read('/etc/ambari-agent/conf/ambari-agent.ini'); print(c['server']['hostname'])")
 
 ambari_api="${ambari_protocol}://localhost:${ambari_port}/api/v1"
-ambari_curl_cmd="curl -ksS -u ${ambari_user} -H x-requested-by:curl"
+ambari_curl_cmd="curl -ksS -u ${ambari_user}:${ambari_pass} -H x-requested-by:curl"
 export ambari_curl="${ambari_curl_cmd} ${ambari_api}"
 ambari_cluster=$(${ambari_curl}/clusters | python -c 'import sys,json; \
             print json.load(sys.stdin)["items"][0]["Clusters"]["cluster_name"]')
@@ -64,6 +66,7 @@ echo ${nifi_hosts_json}
 keytab=/etc/security/keytabs/rangerusersync.service.keytab
 sudo -u ranger kinit -kt ${keytab} $(sudo -u ranger klist -kt ${keytab}| awk '{print $NF}'|tail -1)
 ranger_curl="sudo -u ranger curl -vksS -u: --negotiate -H Accept:application/json -H Content-Type:application/json -H x-requested-by:opserv-keel https://$(hostname -f):6182"
+ranger_curl="sudo -u ranger curl -vksS -u: --negotiate -H Accept:application/json -H Content-Type:application/json -H x-requested-by:opserv-keel http://$(hostname -f):6080"
  
 ## In Ranger, create "nifi-hosts" group
 read -r -d '' body <<EOF
@@ -332,12 +335,12 @@ nifi.registry.security.identity.mapping.pattern.dn=^CN=(.*?), OU=(.*?)$
 nifi.registry.security.identity.mapping.pattern.kerb=^(.*?)@(.*?)$
 nifi.registry.security.identity.mapping.value.dn=$1
 nifi.registry.security.identity.mapping.value.kerb=$1
+
+nifi.registry.security.identity.provider=ldap-provider 
 ```
 
 Custom nifi-registry-properties:
 ```
-nifi.registry.security.identity.provider=ldap-provider 
-
 nifi.registry.security.group.mapping.pattern.anygroup=^(.*)$
 nifi.registry.security.group.mapping.transform.anygroup=LOWER
 nifi.registry.security.group.mapping.value.anygroup=$1
@@ -351,9 +354,15 @@ nifi.registry.security.identity.mapping.transform.zzzanyuser=LOWER
 nifi.registry.security.identity.mapping.value.zzzanyuser=$1
 ```
 
+nifi-registry-ambari-config:
+```
+nifi.registry.port=
+```
+
 nifi-registry-ambari-ssl-config:
 ```
-nifi.registry.initial.admin.identity={{config['configurations']['nifi-ambari-ssl-config']['nifi.initial.admin.identity']}}
+nifi.registry.ssl.isenabled=true
+nifi.registry.initial.admin.identity= copy the same config from nifi
 node identities content= copy the same config from nifi
 ```
 
