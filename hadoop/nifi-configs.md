@@ -31,6 +31,9 @@ Custom nifi-properties:
 nifi.security.identity.mapping.pattern.cert=^CN=(.*?), OU=(.*?), O=(.*?), L=(.*?), ST=(.*?), C=(.*?)$
 nifi.security.identity.mapping.value.cert=$1
 nifi.security.identity.mapping.transform.cert=LOWER
+nifi.security.identity.mapping.pattern.certreverse=^C=(.*?), ST=(.*?), L=(.*?), O=(.*?), OU=(.*?), CN=(.*?)$
+nifi.security.identity.mapping.value.certreverse=$6
+nifi.security.identity.mapping.transform.certreverse=LOWER
 nifi.security.identity.mapping.pattern.zzzanyuser=^(.*)$
 nifi.security.identity.mapping.transform.zzzanyuser=LOWER
 nifi.security.identity.mapping.value.zzzanyuser=$1
@@ -348,6 +351,9 @@ nifi.registry.security.identity.mapping.transform.dn=LOWER
 nifi.registry.security.identity.mapping.transform.kerb=LOWER
 nifi.registry.security.identity.mapping.pattern.cert=^CN=(.*?), OU=(.*?), O=(.*?), L=(.*?), ST=(.*?), C=(.*?)$
 nifi.registry.security.identity.mapping.value.cert=$1
+nifi.registry.security.identity.mapping.pattern.certreverse=^C=(.*?), ST=(.*?), L=(.*?), O=(.*?), OU=(.*?), CN=(.*?)$
+nifi.registry.security.identity.mapping.value.certreverse=$6
+nifi.registry.security.identity.mapping.transform.certreverse=LOWER
 nifi.registry.security.identity.mapping.transform.cert=LOWER
 nifi.registry.security.identity.mapping.pattern.zzzanyuser=^(.*)$
 nifi.registry.security.identity.mapping.transform.zzzanyuser=LOWER
