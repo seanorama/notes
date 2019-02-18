@@ -11,97 +11,7 @@ Includes:
 - Ranger for authorization in conjection with the ldap-user-group-provider
 - Compression of rotated logs
 
-## Identity Mapping
-
-Advanced nifi-properties:
-```
-nifi.security.group.mapping.pattern.anygroup=^(.*)$
-nifi.security.group.mapping.transform.anygroup=LOWER
-nifi.security.group.mapping.value.anygroup=$1
-nifi.security.identity.mapping.pattern.dn=^CN=(.*?), OU=(.*?)$
-nifi.security.identity.mapping.transform.dn=LOWER
-nifi.security.identity.mapping.value.dn=$1
-nifi.security.identity.mapping.pattern.kerb=^(.*?)@(.*?)$
-nifi.security.identity.mapping.transform.kerb=LOWER
-nifi.security.identity.mapping.value.kerb=$1
-```
-
-Custom nifi-properties:
-```
-nifi.security.identity.mapping.pattern.cert=^CN=(.*?), OU=(.*?), O=(.*?), L=(.*?), ST=(.*?), C=(.*?)$
-nifi.security.identity.mapping.value.cert=$1
-nifi.security.identity.mapping.transform.cert=LOWER
-nifi.security.identity.mapping.pattern.certreverse=^C=(.*?), ST=(.*?), L=(.*?), O=(.*?), OU=(.*?), CN=(.*?)$
-nifi.security.identity.mapping.value.certreverse=$6
-nifi.security.identity.mapping.transform.certreverse=LOWER
-nifi.security.identity.mapping.pattern.zzzanyuser=^(.*)$
-nifi.security.identity.mapping.transform.zzzanyuser=LOWER
-nifi.security.identity.mapping.value.zzzanyuser=$1
-```
-
-From the Ambari & Ranger host. This needs adjusting if they are on different hosts:
-```
-sudo yum install python-configparser jq pwgen
-
-read -p "Enter password:" -s ambari_pass
-
-ambari_user=admin
-ambari_protocol=https
-ambari_port=8443
-ambari_host=$(python -c "import configparser; c = configparser.ConfigParser(); c.read('/etc/ambari-agent/conf/ambari-agent.ini'); print(c['server']['hostname'])")
-
-ambari_api="${ambari_protocol}://localhost:${ambari_port}/api/v1"
-ambari_curl_cmd="curl -ksS -u ${ambari_user}:${ambari_pass} -H x-requested-by:curl"
-export ambari_curl="${ambari_curl_cmd} ${ambari_api}"
-ambari_cluster=$(${ambari_curl}/clusters | python -c 'import sys,json; \
-            print json.load(sys.stdin)["items"][0]["Clusters"]["cluster_name"]')
-echo ${ambari_cluster}
-
-nifi_hosts=$(${ambari_curl}"/clusters/${ambari_cluster}/services/NIFI/components/NIFI_MASTER?fields=host_components/HostRoles/host_name" | jq -r '.host_components[].HostRoles.host_name')
-
-nifi_hosts_json=$(${ambari_curl}"/clusters/${ambari_cluster}/services/NIFI/components/NIFI_MASTER?fields=host_components/HostRoles/host_name" | jq '.host_components[].HostRoles.host_name' | jq -r '[.]' | jq -s -c 'add')
-
-echo ${nifi_hosts}
-
-echo ${nifi_hosts_json}
-
-## Create ranger_curl commands to re-use
-keytab=/etc/security/keytabs/rangerusersync.service.keytab
-sudo -u ranger kinit -kt ${keytab} $(sudo -u ranger klist -kt ${keytab}| awk '{print $NF}'|tail -1)
-ranger_curl="sudo -u ranger curl -vksS -u: --negotiate -H Accept:application/json -H Content-Type:application/json -H x-requested-by:opserv-keel https://$(hostname -f):6182"
-ranger_curl="sudo -u ranger curl -vksS -u: --negotiate -H Accept:application/json -H Content-Type:application/json -H x-requested-by:opserv-keel http://$(hostname -f):6080"
- 
-## In Ranger, create "nifi-hosts" group
-read -r -d '' body <<EOF
-{"name":"nifi-hosts","description":"nifi-hosts"}
-EOF
-group_id=$(echo "${body}" | ${ranger_curl}"/service/xusers/secure/groups" -X POST -d @- | jq '.id')
-
-## Create users for each host
-for nifi_host in ${nifi_hosts}; do
-  read -r -d '' body <<EOF
-{ "name":"${nifi_host}",
-  "firstName":"${nifi_host}",
-  "loginId": "${nifi_host}",
-  "emailAddress" : null,
-  "password" : "$(pwgen 32 1)",
-  "groupIdList":[${group_id}],
-  "status":1,
-  "isVisible":1,
-  "userRoleList": ["ROLE_USER"]
-}
-EOF
-  echo "${body}" | ${ranger_curl}/service/xusers/secure/users -X POST -d @-
-done
-
-read -r -d '' body <<EOF
-{"policyType":"0","name":"nifi-hosts","isEnabled":true,"policyPriority":0,"policyLabels":[""],"description":"","isAuditEnabled":true,"resources":{"nifi-resource":{"values":["/proxy","/controller"],"isRecursive":false,"isExcludes":false}},"policyItems":[{"users":${nifi_hosts_json},"groups":["nifi-hosts"],"accesses":[{"type":"READ","isAllowed":true},{"type":"WRITE","isAllowed":true}]}],"denyPolicyItems":[],"allowExceptions":[],"denyExceptions":[],"service":"${ambari_cluster}_nifi"}
-EOF
-body=$(echo ${body} | jq '.')
-echo "${body}" | ${ranger_curl}"/service/plugins/policies" -X POST -d @-
-```
-
---------
+----
 
 ## SSL
 
@@ -175,7 +85,7 @@ nifi.security.user.knox.url=https://knox-host.foo.customer.com:8443/gateway/knox
 
 ----
 
-## LDAP
+## NiFi: Authorizer
 
 Custom nifi-authorizers-env:
 ```
@@ -317,6 +227,35 @@ Advanced nifi-authorizers-env: Template for authorizers.xml
 </authorizers> 
 ```
 
+## NiFi: Identity
+
+Advanced nifi-properties:
+```
+nifi.security.group.mapping.pattern.anygroup=^(.*)$
+nifi.security.group.mapping.transform.anygroup=LOWER
+nifi.security.group.mapping.value.anygroup=$1
+nifi.security.identity.mapping.pattern.dn=^CN=(.*?), OU=(.*?)$
+nifi.security.identity.mapping.transform.dn=LOWER
+nifi.security.identity.mapping.value.dn=$1
+nifi.security.identity.mapping.pattern.kerb=^(.*?)@(.*?)$
+nifi.security.identity.mapping.transform.kerb=LOWER
+nifi.security.identity.mapping.value.kerb=$1
+```
+
+Custom nifi-properties:
+```
+nifi.security.identity.mapping.pattern.cert=^CN=(.*?), OU=(.*?), O=(.*?), L=(.*?), ST=(.*?), C=(.*?)$
+nifi.security.identity.mapping.value.cert=$1
+nifi.security.identity.mapping.transform.cert=LOWER
+nifi.security.identity.mapping.pattern.certreverse=^C=(.*?), ST=(.*?), L=(.*?), O=(.*?), OU=(.*?), CN=(.*?)$
+nifi.security.identity.mapping.value.certreverse=$6
+nifi.security.identity.mapping.transform.certreverse=LOWER
+nifi.security.identity.mapping.pattern.zzzanyuser=^(.*)$
+nifi.security.identity.mapping.transform.zzzanyuser=LOWER
+nifi.security.identity.mapping.value.zzzanyuser=$1
+```
+
+
 --------
 
 ## Enable log compression
@@ -324,42 +263,85 @@ Advanced nifi-authorizers-env: Template for authorizers.xml
 Template for logback.xml:
 - Replace `.log</fileNamePattern>` with `.log.gz</fileNamePattern>`
 
+---- 
+
+## Start NiFi
+
+To make NiFi available in Ranger, you must start it once.
+
+## Ranger users and policies
+
+From the Ambari & Ranger host. This needs adjusting if they are on different hosts:
+```
+sudo yum install python-configparser jq pwgen
+
+read -p "Enter password:" -s ambari_pass
+
+ambari_user=admin
+ambari_protocol=https
+ambari_port=8443
+ambari_host=$(python -c "import configparser; c = configparser.ConfigParser(); c.read('/etc/ambari-agent/conf/ambari-agent.ini'); print(c['server']['hostname'])")
+
+ambari_api="${ambari_protocol}://localhost:${ambari_port}/api/v1"
+ambari_curl_cmd="curl -ksS -u ${ambari_user}:${ambari_pass} -H x-requested-by:curl"
+export ambari_curl="${ambari_curl_cmd} ${ambari_api}"
+ambari_cluster=$(${ambari_curl}/clusters | python -c 'import sys,json; \
+            print json.load(sys.stdin)["items"][0]["Clusters"]["cluster_name"]')
+echo ${ambari_cluster}
+
+nifi_hosts=$(${ambari_curl}"/clusters/${ambari_cluster}/services/NIFI/components/NIFI_MASTER?fields=host_components/HostRoles/host_name" | jq -r '.host_components[].HostRoles.host_name')
+
+nifi_hosts_json=$(${ambari_curl}"/clusters/${ambari_cluster}/services/NIFI/components/NIFI_MASTER?fields=host_components/HostRoles/host_name" | jq '.host_components[].HostRoles.host_name' | jq -r '[.]' | jq -s -c 'add')
+
+echo ${nifi_hosts}
+
+echo ${nifi_hosts_json}
+
+## Create ranger_curl commands to re-use
+keytab=/etc/security/keytabs/rangerusersync.service.keytab
+sudo -u ranger kinit -kt ${keytab} $(sudo -u ranger klist -kt ${keytab}| awk '{print $NF}'|tail -1)
+ranger_curl="sudo -u ranger curl -vksS -u: --negotiate -H Accept:application/json -H Content-Type:application/json -H x-requested-by:opserv-keel https://$(hostname -f):6182"
+ranger_curl="sudo -u ranger curl -vksS -u: --negotiate -H Accept:application/json -H Content-Type:application/json -H x-requested-by:opserv-keel http://$(hostname -f):6080"
+ 
+## In Ranger, create "nifi-hosts" group
+read -r -d '' body <<EOF
+{"name":"nifi-hosts","description":"nifi-hosts"}
+EOF
+group_id=$(echo "${body}" | ${ranger_curl}"/service/xusers/secure/groups" -X POST -d @- | jq '.id')
+
+## Create users for each host
+for nifi_host in ${nifi_hosts}; do
+  read -r -d '' body <<EOF
+{ "name":"${nifi_host}",
+  "firstName":"${nifi_host}",
+  "loginId": "${nifi_host}",
+  "emailAddress" : null,
+  "password" : "$(pwgen 32 1)",
+  "groupIdList":[${group_id}],
+  "status":1,
+  "isVisible":1,
+  "userRoleList": ["ROLE_USER"]
+}
+EOF
+  echo "${body}" | ${ranger_curl}/service/xusers/secure/users -X POST -d @-
+done
+
+read -r -d '' body <<EOF
+{"policyType":"0","name":"nifi-hosts","isEnabled":true,"policyPriority":0,"policyLabels":[""],"description":"","isAuditEnabled":true,"resources":{"nifi-resource":{"values":["/proxy","/controller"],"isRecursive":false,"isExcludes":false}},"policyItems":[{"users":${nifi_hosts_json},"groups":["nifi-hosts"],"accesses":[{"type":"READ","isAllowed":true},{"type":"WRITE","isAllowed":true}]}],"denyPolicyItems":[],"allowExceptions":[],"denyExceptions":[],"service":"${ambari_cluster}_nifi"}
+EOF
+body=$(echo ${body} | jq '.')
+echo "${body}" | ${ranger_curl}"/service/plugins/policies" -X POST -d @-
+```
+
+## Restart NiFi
+
+Login to verify it's working.
+
 --------
 
-## Nifi-Registry
+# Nifi-Registry
 
-
-
-## Identity Mapping
-
-Advanced nifi-registry-properties:
-```
-nifi.registry.security.identity.mapping.pattern.dn=^CN=(.*?), OU=(.*?)$
-nifi.registry.security.identity.mapping.pattern.kerb=^(.*?)@(.*?)$
-nifi.registry.security.identity.mapping.value.dn=$1
-nifi.registry.security.identity.mapping.value.kerb=$1
-
-nifi.registry.security.identity.provider=ldap-provider 
-```
-
-Custom nifi-registry-properties:
-```
-nifi.registry.security.group.mapping.pattern.anygroup=^(.*)$
-nifi.registry.security.group.mapping.transform.anygroup=LOWER
-nifi.registry.security.group.mapping.value.anygroup=$1
-nifi.registry.security.identity.mapping.transform.dn=LOWER
-nifi.registry.security.identity.mapping.transform.kerb=LOWER
-nifi.registry.security.identity.mapping.pattern.cert=^CN=(.*?), OU=(.*?), O=(.*?), L=(.*?), ST=(.*?), C=(.*?)$
-nifi.registry.security.identity.mapping.value.cert=$1
-nifi.registry.security.identity.mapping.pattern.certreverse=^C=(.*?), ST=(.*?), L=(.*?), O=(.*?), OU=(.*?), CN=(.*?)$
-nifi.registry.security.identity.mapping.value.certreverse=$6
-nifi.registry.security.identity.mapping.transform.certreverse=LOWER
-nifi.registry.security.identity.mapping.transform.cert=LOWER
-nifi.registry.security.identity.mapping.pattern.zzzanyuser=^(.*)$
-nifi.registry.security.identity.mapping.transform.zzzanyuser=LOWER
-nifi.registry.security.identity.mapping.value.zzzanyuser=$1
-```
-
+## Nifi-Registry: SSL
 nifi-registry-ambari-config:
 ```
 nifi.registry.port=
@@ -372,6 +354,27 @@ nifi.registry.initial.admin.identity= copy the same config from nifi
 node identities content= copy the same config from nifi
 ```
 
+#### ONLY IF using your own certificates instead of NiFi CA:
+
+Advanced nifi-registry-ambari-ssl-config:
+```
+nifi.registry.security.keystore=/etc/security/serverKeys/keystore.jks
+nifi.registry.security.keystoreType=JKS
+nifi.registry.security.keystorePasswd=changeit
+nifi.registry.security.keyPasswd=changeit
+nifi.registry.security.truststore=/etc/pki/java/cacerts
+nifi.registry.security.truststoreType=JKS
+nifi.registry.security.truststorePasswd=changeit
+```
+
+Advanced nifi-registry-properties:
+```
+nifi.registry.security.keystorePasswd=changeit
+nifi.registry.security.keyPasswd=changeit
+nifi.registry.security.truststorePasswd=changeit
+```
+
+## Nifi-Registry: Authorizers
 Advanced nifi-registry-authorizers-env
 ```
 <authorizers>
@@ -451,6 +454,35 @@ Advanced nifi-registry-authorizers-env
 </authorizers> 
 ```
 
+## Nifi-Registry: Identity
+
+Advanced nifi-registry-properties:
+```
+nifi.registry.security.identity.mapping.pattern.dn=^CN=(.*?), OU=(.*?)$
+nifi.registry.security.identity.mapping.pattern.kerb=^(.*?)@(.*?)$
+nifi.registry.security.identity.mapping.value.dn=$1
+nifi.registry.security.identity.mapping.value.kerb=$1
+
+nifi.registry.security.identity.provider=ldap-provider 
+```
+
+Custom nifi-registry-properties:
+```
+nifi.registry.security.group.mapping.pattern.anygroup=^(.*)$
+nifi.registry.security.group.mapping.transform.anygroup=LOWER
+nifi.registry.security.group.mapping.value.anygroup=$1
+nifi.registry.security.identity.mapping.transform.dn=LOWER
+nifi.registry.security.identity.mapping.transform.kerb=LOWER
+nifi.registry.security.identity.mapping.pattern.cert=^CN=(.*?), OU=(.*?), O=(.*?), L=(.*?), ST=(.*?), C=(.*?)$
+nifi.registry.security.identity.mapping.value.cert=$1
+nifi.registry.security.identity.mapping.pattern.certreverse=^C=(.*?), ST=(.*?), L=(.*?), O=(.*?), OU=(.*?), CN=(.*?)$
+nifi.registry.security.identity.mapping.value.certreverse=$6
+nifi.registry.security.identity.mapping.transform.certreverse=LOWER
+nifi.registry.security.identity.mapping.transform.cert=LOWER
+nifi.registry.security.identity.mapping.pattern.zzzanyuser=^(.*)$
+nifi.registry.security.identity.mapping.transform.zzzanyuser=LOWER
+nifi.registry.security.identity.mapping.value.zzzanyuser=$1
+```
 
 Advanced nifi-registry-identity-providers-env
 ```
