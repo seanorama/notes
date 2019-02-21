@@ -542,3 +542,10 @@ Advanced nifi-registry-identity-providers-env
     {% endif %}
 </identityProviders> 
 ```
+
+--------
+
+## Enable log compression
+
+Template for logback.xml:
+- Replace `.log</fileNamePattern>` with `.log.gz</fileNamePattern>`
