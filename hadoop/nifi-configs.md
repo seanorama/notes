@@ -271,6 +271,29 @@ May not be required once this fix is released: https://github.com/hortonworks/hd
 
 Advanced nifi-bootstrap-env: Update `java.arg.15=-Dambari.metrics.collector.url=http` to have `https`.
 
+----
+
+## Ranger NiFi plugin
+
+Advanced ranger-nifi-plugin-properties:
+```
+nifi.authentication=SSL
+nifi.ssl.keystore={{nifi_keystore}}
+nifi.ssl.keystorePassword=changeit
+nifi.ssl.keystoreType={{nifi_keystoreType}}
+nifi.ssl.truststore={{nifi_truststore}}
+nifi.ssl.truststoreType={{nifi_truststoreType}}
+nifi.ssl.truststorePassword=changeit
+```
+
+advanced ranger-nifi-policymgr-ssl
+```
+xasecure.policymgr.clientssl.keystore=/etc/security/certificates/keystore.jks
+xasecure.policymgr.clientssl.keystore.password=changeit
+xasecure.policymgr.clientssl.truststore=/etc/pki/java/cacerts
+xasecure.policymgr.clientssl.truststore.password=changeit
+```
+
 ---- 
 
 ## Start NiFi
