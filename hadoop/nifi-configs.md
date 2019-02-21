@@ -43,7 +43,7 @@ Advanced nifi-ambari-ssl-config Node identities "content": Add line for each of 
 
 advanced nifi-ambari-ssl-config:
 ```
-nifi.security.keystore=/etc/security/serverKeys/keystore.jks
+nifi.security.keystore=/etc/security/certificates/keystore.jks
 nifi.security.keystoreType=JKS
 nifi.security.truststore=/etc/pki/java/cacerts
 nifi.security.truststoreType=JKS
@@ -96,7 +96,7 @@ ldap-user-search-filter=(|(memberOf=CN=nifi-users,OU=foo,DC=example,DC=com))
 ldap-group-search-base=DC=example,DC=com
 ldap-group-search-filter=(|(cn=nifi-usrs)(cn=nifi-admins))
 
-ldap-tls-keystore=/etc/security/serverKeys/keystore.jks
+ldap-tls-keystore=/etc/security/certificates/keystore.jks
 ldap-tls-truststore=/etc/pki/java/cacerts
 ldap-tls-keystore-type=jks
 ldap-tls-truststore-type=jks
@@ -366,7 +366,7 @@ node identities content= copy the same config from nifi
 
 Advanced nifi-registry-ambari-ssl-config:
 ```
-nifi.registry.security.keystore=/etc/security/serverKeys/keystore.jks
+nifi.registry.security.keystore=/etc/security/certificates/keystore.jks
 nifi.registry.security.keystoreType=JKS
 nifi.registry.security.keystorePasswd=changeit
 nifi.registry.security.keyPasswd=changeit
