@@ -263,6 +263,14 @@ nifi.security.identity.mapping.value.zzzanyuser=$1
 Template for logback.xml:
 - Replace `.log</fileNamePattern>` with `.log.gz</fileNamePattern>`
 
+--------
+
+## If Ambari Metrics is using SSL:
+
+May not be required once this fix is released: https://github.com/hortonworks/hdf_ambari_mp/pull/318/files
+
+Advanced nifi-bootstrap-env: Update `java.arg.15=-Dambari.metrics.collector.url=http` to have `https`.
+
 ---- 
 
 ## Start NiFi
