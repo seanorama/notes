@@ -266,7 +266,7 @@ nifi.security.identity.mapping.value.zzzanyuser=$1
 
         <property name='Url'>{{config['configurations']['nifi-authorizers-env']['ldap-url']}}</property>
         <property name='User Search Base'>{{config['configurations']['nifi-authorizers-env']['ldap-user-search-base']}}</property>
-        <property name='User Search Filter'>(sAMAccountName={0})</property>
+        <property name='User Search Filter'>({{config['configurations']['nifi-authorizers-env']['ldap-user-identity-attribute']}}={0})</property>
 
         <property name='Identity Strategy'>{{config['configurations']['nifi-authorizers-env']['ldap-identity-strategy']}}</property>
 
