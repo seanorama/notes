@@ -232,6 +232,11 @@ nifi.security.identity.mapping.transform.kerb=LOWER
 nifi.security.identity.mapping.value.kerb=$1
 ```
 
+If not using KnoxSSO:
+```
+nifi.security.user.login.identity.provider=ldap-provider
+```
+
 Custom nifi-properties:
 ```
 nifi.security.identity.mapping.pattern.cert=^CN=(.*?), OU=(.*?), O=(.*?), L=(.*?), ST=(.*?), C=(.*?)$
@@ -245,6 +250,30 @@ nifi.security.identity.mapping.transform.zzzanyuser=LOWER
 nifi.security.identity.mapping.value.zzzanyuser=$1
 ```
 
+```
+<loginIdentityProviders>
+    <provider>
+        <identifier>ldap-provider</identifier>
+        <class>org.apache.nifi.ldap.LdapProvider</class>
+        <property name='Authentication Strategy'>{{config['configurations']['nifi-authorizers-env']['ldap-authentication-strategy']}}</property>
+
+        <property name='Manager DN'>{{config['configurations']['nifi-authorizers-env']['ldap-manager-dn']}}</property>
+        <property name='Manager Password'>{{config['configurations']['nifi-authorizers-env']['ldap-manager-password']}}</property>
+
+        <property name='Referral Strategy'>{{config['configurations']['nifi-authorizers-env']['ldap-referral-strategy']}}</property>
+        <property name='Connect Timeout'>{{config['configurations']['nifi-authorizers-env']['ldap-connect-timeout']}}</property>
+        <property name='Read Timeout'>{{config['configurations']['nifi-authorizers-env']['ldap-read-timeout']}}</property>
+
+        <property name='Url'>{{config['configurations']['nifi-authorizers-env']['ldap-url']}}</property>
+        <property name='User Search Base'>{{config['configurations']['nifi-authorizers-env']['ldap-user-search-base']}}</property>
+        <property name='User Search Filter'>(sAMAccountName={0})</property>
+
+        <property name='Identity Strategy'>{{config['configurations']['nifi-authorizers-env']['ldap-identity-strategy']}}</property>
+
+        <property name='Authentication Expiration'>{{config['configurations']['nifi-authorizers-env']['ldap-authentication-expiration']}}</property>
+    </provider>
+</loginIdentityProviders>
+```
 
 --------
 
