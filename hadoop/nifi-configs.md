@@ -135,8 +135,7 @@ ldap-tls-truststore-password=changeit
 Advanced nifi-authorizers-env: Template for authorizers.xml
 ```
 <authorizers>
-
-    {% if not (has_ranger_admin and enable_ranger_nifi) %}
+    {%- if not (has_ranger_admin and enable_ranger_nifi) -%}
     <userGroupProvider>
         <identifier>file-user-group-provider</identifier>
         <class>org.apache.nifi.authorization.FileUserGroupProvider</class>
@@ -161,17 +160,13 @@ Advanced nifi-authorizers-env: Template for authorizers.xml
         <class>org.apache.nifi.authorization.StandardManagedAuthorizer</class>
         <property name="Access Policy Provider">file-access-policy-provider</property>
     </authorizer>
-    
-    {% else %}
-
+    {%- else -%}
     <userGroupProvider>
         <identifier>ldap-user-group-provider</identifier>
         <class>org.apache.nifi.ldap.tenants.LdapUserGroupProvider</class>
         <property name="Authentication Strategy">{{config['configurations']['nifi-authorizers-env']['ldap-authentication-strategy']}}</property>
-
         <property name="Manager DN">{{config['configurations']['nifi-authorizers-env']['ldap-manager-dn']}}</property>
         <property name="Manager Password">{{config['configurations']['nifi-authorizers-env']['ldap-manager-password']}}</property>
-
         <property name="TLS - Keystore">{{config['configurations']['nifi-authorizers-env']['ldap-tls-keystore']}}</property>
         <property name="TLS - Keystore Password">{{config['configurations']['nifi-authorizers-env']['ldap-tls-keystore-password']}}</property>
         <property name="TLS - Keystore Type">{{config['configurations']['nifi-authorizers-env']['ldap-tls-keystore-type']}}</property>
@@ -181,15 +176,12 @@ Advanced nifi-authorizers-env: Template for authorizers.xml
         <property name="TLS - Client Auth">{{config['configurations']['nifi-authorizers-env']['ldap-tls-client-auth']}}</property>
         <property name="TLS - Protocol">{{config['configurations']['nifi-authorizers-env']['ldap-tls-protocol']}}</property>
         <property name="TLS - Shutdown Gracefully">{{config['configurations']['nifi-authorizers-env']['ldap-tls-shutdown-gracefully']}}</property>
-
         <property name="Referral Strategy">{{config['configurations']['nifi-authorizers-env']['ldap-referral-strategy']}}</property>
         <property name="Connect Timeout">{{config['configurations']['nifi-authorizers-env']['ldap-connect-timeout']}}</property>
         <property name="Read Timeout">{{config['configurations']['nifi-authorizers-env']['ldap-read-timeout']}}</property>
-
         <property name="Url">{{config['configurations']['nifi-authorizers-env']['ldap-url']}}</property>
         <property name="Page Size">{{config['configurations']['nifi-authorizers-env']['ldap-page-size']}}</property>
         <property name="Sync Interval">{{config['configurations']['nifi-authorizers-env']['ldap-sync-interval']}}</property>
-
         <property name="User Search Base">{{config['configurations']['nifi-authorizers-env']['ldap-user-search-base']}}</property>
         <property name="User Object Class">{{config['configurations']['nifi-authorizers-env']['ldap-user-object-class']}}</property>
         <property name="User Search Scope">{{config['configurations']['nifi-authorizers-env']['ldap-user-search-scope']}}</property>
@@ -197,7 +189,6 @@ Advanced nifi-authorizers-env: Template for authorizers.xml
         <property name="User Identity Attribute">{{config['configurations']['nifi-authorizers-env']['ldap-user-identity-attribute']}}</property>
         <property name="User Group Name Attribute">{{config['configurations']['nifi-authorizers-env']['ldap-user-group-name-attribute']}}</property>
         <property name="User Group Name Attribute - Referenced Group Attribute">{{config['configurations']['nifi-authorizers-env']['ldap-user-group-name-attribute-referenced-group-attribute']}}</property>
-
         <property name="Group Search Base">{{config['configurations']['nifi-authorizers-env']['ldap-group-search-base']}}</property>
         <property name="Group Object Class">{{config['configurations']['nifi-authorizers-env']['ldap-group-object-class']}}</property>
         <property name="Group Search Scope">{{config['configurations']['nifi-authorizers-env']['ldap-group-search-scope']}}</property>
@@ -216,14 +207,13 @@ Advanced nifi-authorizers-env: Template for authorizers.xml
         <property name="Ranger Service Type">nifi</property>
         <property name="Ranger Application Id">nifi</property>
         <property name="Ranger Admin Identity">{{ranger_admin_identity}}</property>
-        {% if security_enabled %}
+        {%- if security_enabled -%}
         <property name="Ranger Kerberos Enabled">true</property>
-        {% else %}
+        {%- else -%}
         <property name="Ranger Kerberos Enabled">false</property>
-        {% endif %}
-    </authorizer>
-    
-    {% endif %}
+        {%- endif -%}
+    </authorizer>  
+    {%- endif -%}
 </authorizers> 
 ```
 
